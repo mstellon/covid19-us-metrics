@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output
 import dash_html_components as html
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-
+import flask
 
 
 import pandas as pd
@@ -26,7 +26,9 @@ external_stylesheets = [{"src":"https://stackpath.bootstrapcdn.com/bootstrap/4.4
 #'https://codepen.io/chriddyp/pen/bWLwgP.css'
 ]
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = flask.Flask(__name__)
+
+app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container([
       dbc.Row(components.national_stats(data.get_national_stats(), data.national_last_update)),
