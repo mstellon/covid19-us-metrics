@@ -1,0 +1,12 @@
+#state{
+    display: flex;
+    justify-content: space-between;
+}
+
+#state-graph{
+    width: 50%;
+}
+
+#state-info{
+    width: 50%
+}
