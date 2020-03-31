@@ -29,10 +29,7 @@ def grade_card(grade):
         color = 'warning'
     else:
         color = 'danger'
-    card = dbc.Card([
-        dbc.CardHeader(html.P("Reporting Grade")),
-        dbc.CardBody(html.P(html.B(grade), className='card-text'))
-    ],className='', color=color, style={'text-align':'center'})
+    card = html.H5(["Reporting Grade ", dbc.Badge(grade,color=color)], style={"text-align":"right"})
     return card
 
 def state_info(state, data):
@@ -40,15 +37,20 @@ def state_info(state, data):
         return ""
 
     state_info, state_current = data.get_state_data(state)
-    
+    state_grade = data.get_state_grade(state)
+
     return [dbc.Col(dcc.Graph(id='state_new', figure=px.bar(data.state_net_new(state), x='date',y='new'), config=config),lg=6),
                 dbc.Col(dbc.Card([
-                    dbc.CardHeader(html.H3(state_info['name'])),
+                    dbc.CardHeader(dbc.Row([
+                                    dbc.Col(html.H3(state_info['name'])), 
+                                    dbc.Col(grade_card(state_grade), align='center')
+                                    ], justify='between')
+                                    ),
                     dbc.CardBody([dbc.Row(
                         dbc.Col(build_table(state_current, id='state-data'))
                         ),
                         dbc.Row([
-                            dbc.Col(grade_card(data.get_state_grade(state)),lg=4),
+                            dbc.Col("place holders",lg=4),
                             dbc.Col([
                                 dcc.Markdown(state_info.get('notes', ""))
                             ])
