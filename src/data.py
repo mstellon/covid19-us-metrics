@@ -20,13 +20,7 @@ class Data(object):
 
     def setup_state_data(self):
         df = pd.read_json(self.url + '/states/daily')
-        # get current data and append
-        current = pd.read_json(self.url + '/states')
-        max_dt = max(df['dateChecked'])
-        current = current[current['dateModified']>max_dt]
-        current['date'] = current['dateModified']\
-        .map(lambda x: x.split('T')[0].replace('-',''))
-
+        df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
         df = df.sort_values(['state','dateChecked'])\
                 .drop_duplicates(['state','dateChecked'],keep='last')
 

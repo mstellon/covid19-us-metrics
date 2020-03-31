@@ -1,0 +1,1 @@
+web: python src/app.py --ip=0.0.0.0

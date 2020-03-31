@@ -38,8 +38,10 @@ def state_info(state, data):
 
     state_info, state_current = data.get_state_data(state)
     state_grade = data.get_state_grade(state)
+    net_new_graph=px.bar(data.state_net_new(state), x='date',y='new')
+    net_new_graph.update_layout(title='Net New Cases', xaxis_tickformat='%b-%d', yaxis_tickformat=',', xaxis_title='Date', yaxis_title='')
 
-    return [dbc.Col(dcc.Graph(id='state_new', figure=px.bar(data.state_net_new(state), x='date',y='new'), config=config),lg=6),
+    return [dbc.Col(dcc.Graph(id='state_new', figure=net_new_graph,  config=config),lg=6),
                 dbc.Col(dbc.Card([
                     dbc.CardHeader(dbc.Row([
                                     dbc.Col(html.H3(state_info['name'])), 
