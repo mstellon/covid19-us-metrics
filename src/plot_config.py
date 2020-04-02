@@ -2,5 +2,6 @@ config = {
 'displayModeBar': False,
 'displaylogo': False,
 'responsive': True,
-'scrollZoom': False
+'scrollZoom': False,
+'autosizable': True
 }

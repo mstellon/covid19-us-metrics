@@ -16,18 +16,20 @@ class Data(object):
     def __init__(self):
         self.url = 'https://covidtracking.com/api'
         
+        self.col_rename = {
+                'positive':'Confirmed Positive',
+                'negative':'Reported Negative',
+                'hospitalized': 'Reported Hospitalized',
+                'death': 'Deaths',
+                'totalTestResults':'Total Reported Tests'
+                }
+
         self.daily_state_df = self.setup_state_data()
 
     def setup_state_data(self):
         df = pd.read_json(self.url + '/states/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
-        df = df.sort_values(['state','dateChecked'])\
-                .drop_duplicates(['state','dateChecked'],keep='last')
-
-        df.sort_values(['state','date'], ascending=False, inplace=True)
-
-        df['new'] = np.where(df['state'] != df['state'].shift(-1), 
-                                0,df['positive'] - df['positive'].shift(-1))
+        df = df.melt(id_vars=['date','state'],value_vars=['positive','negative','death','positiveIncrease','deathIncrease','totalTestResultsIncrease'])
 
         return df
 
@@ -39,9 +41,9 @@ class Data(object):
     def state_dropdown(self):
         return [{"label":s,"value":s } for s in STATES]
 
-    @property
-    def current_by_state(self):
-        return self.daily_state_df.sort_values(['state','date']).drop_duplicates('state',keep='last')
+    def current_by_state(self, var='positive'):
+        df = self.daily_state_df.query(f"variable=='{var}'")
+        return df.sort_values(['state','date']).drop_duplicates('state',keep='last')
     
     def state_net_new(self, state):
         df = self.daily_state_df.query(f"state=='{state}'")
@@ -49,21 +51,20 @@ class Data(object):
 
     def get_national_stats(self):
         us = requests.get(self.url + '/us').json()[0]
-        
-        rename = {
-                'positive':'Confirmed Positive',
-                'negative':'Reported Negative',
-                'hospitalized': 'Reported Hospitalized',
-                'death': 'Deaths',
-                'totalTestResults':'Total Reported Tests'
-                }
-
 
         us_data = {}
-        for k,v in rename.items():
+        for k,v in self.col_rename.items():
             us_data[v] = us[k]
     
         return us_data
+
+    def get_national_historic(self):
+        df = pd.read_json(self.url + '/us/daily')
+        df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
+        df = df.melt(id_vars=['date'],value_vars=['positive','negative','death','positiveIncrease','deathIncrease','totalTestResultsIncrease'])
+
+        return df
+
     @property
     def national_last_update(self):
         last_mod = requests.get(self.url + '/us').json()[0]['lastModified']
@@ -78,12 +79,5 @@ class Data(object):
     def get_state_data(self, state):
         state_info = requests.get(self.url + '/states/info', params={"state":state}).json()
         state_current = requests.get(self.url + '/states', params={'state':state}).json()
-        rename = {
-                'positive':'Confirmed Positive',
-                'negative':'Reported Negative',
-                'hospitalized': 'Reported Hospitalized',
-                'death': 'Deaths',
-                'totalTestResults':'Total Reported Tests',
-                }
-        state_current = {v: state_current[k] for k,v in rename.items()}
+        state_current = {v: state_current[k] for k,v in self.col_rename.items()}
         return state_info, state_current

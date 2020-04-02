@@ -32,14 +32,14 @@ app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTST
 
 app.layout = dbc.Container([
       dbc.Row(components.national_stats(data.get_national_stats(), data.national_last_update)),
-      dbc.Row(
-      dcc.Graph(id='map',figure=px.choropleth(data_frame=data.current_by_state, locations='state',locationmode='USA-states', 
-                    scope='usa',
-                    color='positive',
-                   color_continuous_scale='reds',
-                   width=1000,
-                   
-      ), config=config)),
+      dbc.Row([
+          dbc.Col([
+              dcc.Graph(figure=components.line_graph(data.get_national_historic()),
+                        config=config)
+          
+          ], width=6),
+          dbc.Col(components.state_map(data.current_by_state()),width=6)
+          ]),
       dbc.Row([
           dbc.Col([
           html.H3("State Level detail"),
