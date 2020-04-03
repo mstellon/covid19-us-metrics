@@ -35,12 +35,14 @@ app.layout = dbc.Container([
       dbc.Row([components.national_stats(data.get_national_stats(), data.national_last_update)]),
       dbc.Row([
           dbc.Col([
-              dbc.Row(dbc.Col(html.H5("Data Elements"))),
-              dbc.Row(components.build_checkboxes(data.graph_rename,id="national-switches"), no_gutters=True),
-              dbc.Row(id="national-graph", no_gutters=True)
-          ],width=6),
-          dbc.Col(components.state_map(data.current_by_state()),width=6)
+              dbc.Row(dbc.Col(html.H5("Past and Projected Data"))),
+              dbc.Row(dbc.Col(html.P("Click legend to turn data elements on or off")), no_gutters=True),
+              dbc.Row([components.line_graph(data.get_national_historic())], no_gutters=True)
           ]),
+          
+          ]),
+      dbc.Row(dbc.Col(components.state_map(data.current_by_state()))),
+      dbc.Row(dbc.Col(html.Hr())),
       dbc.Row([
           dbc.Col([
           html.H3("State Level detail"),
@@ -85,14 +87,12 @@ def data_element_change(value):
         return components.line_graph(data.get_national_historic(cols=value))
 @app.callback(
     Output(component_id='state-graph', component_property="children"),
-    [Input(component_id='state-dropdown',component_property='value'),
-     Input(component_id='state-switches', component_property='value')]
+    [Input(component_id='state-dropdown',component_property='value')]
 )
-def state_date_element_change(state,value):
-    if len(value) == 0:
-        return dbc.Col("No data elements selected")
-    else:
-        return components.line_graph(data.get_state_graph_data(state,cols=value))
+def state_date_element_change(state):
+    if state == "Select a State":
+        return ""
+    return components.line_graph(data.get_state_graph_data(state))
   
 if __name__ == '__main__':
     app.run_server(debug=True, port=5000, host='0.0.0.0')

@@ -1,3 +1,4 @@
+from io import BytesIO
 from datetime import datetime
 import pytz
 
@@ -5,6 +6,8 @@ import requests
 import requests_cache
 import pandas as pd
 import numpy as np
+import us
+import zipfile
 
 requests_cache.install_cache(expire_after=900, backend='memory')
 STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", 
@@ -15,7 +18,6 @@ STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
 class Data(object):
     def __init__(self):
         self.url = 'https://covidtracking.com/api'
-        
         self.col_rename = {
                 'positive':'Confirmed Positive',
                 'negative':'Reported Negative',
@@ -25,7 +27,10 @@ class Data(object):
                 }
         self.graph_rename = {"positiveIncrease": "Positives per Day",
                             "totalTestResultsIncrease": "Tests per Day",
-                            "deathIncrease": "Deaths per Day"}
+                            "deathIncrease": "Deaths per Day",
+                            'deaths_mean':"Projected Deaths per Day",
+                            'admis_mean':"Projected Hospital Admission per Day",
+                            'allbed_mean':"Projected Hospital Beds Needed per Day"}
 
         self.daily_state_df = self.setup_state_data()
 
@@ -33,7 +38,28 @@ class Data(object):
         df = pd.read_json(self.url + '/states/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
         return df
+    
+    def get_projections(self):
+        url = "https://ihmecovid19storage.blob.core.windows.net/latest/ihme-covid19.zip"
+        resp = requests.get(url)
+        
+        f = BytesIO(resp.content)
+        z = zipfile.ZipFile(f)
+        csvf = [f for f in z.namelist() if ".csv" in f]
+        csv = BytesIO(z.read(csvf[0]))
+        df = pd.read_csv(csv)
+        df['state'] = df.location.map(self.get_state)
+        df['date'] = pd.to_datetime(df['date'],format='%Y-%m-%d')
+        # keep future projections
+        df = df[df['date'] >= pd.to_datetime('today')]
+        return df[['date','state','deaths_mean', 'admis_mean','allbed_mean']]
 
+    def get_state(self, x):
+        state = us.states.lookup(x,field='name')
+        if state:
+            return state.abbr
+        else:
+            return x
     @property
     def states(self):
         return sorted(self.daily_state_df['state'].unique().tolist())
@@ -48,12 +74,14 @@ class Data(object):
     
     def get_state_graph_data(self, state, cols=None):
         if not cols:
-            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease']
-        cols.append('date')
-        cols.append('state')
+            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease',
+                    'deaths_mean', 'admis_mean','allbed_mean']
         df = self.daily_state_df.query(f"state=='{state}'")
-
-        return df[cols]
+        proj = self.get_projections().query(f"state=='{state}'")
+        df = df.merge(proj, on=['date','state'], how='outer')
+        df = df.melt(id_vars=['date','state'],value_vars=cols)
+        df['variable'] = df['variable'].map(self.graph_rename)
+        return df
 
     def get_national_stats(self):
         us = requests.get(self.url + '/us').json()[0]
@@ -66,12 +94,15 @@ class Data(object):
 
     def get_national_historic(self, cols=None):
         if not cols:
-            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease']
-        cols.append('date')
+            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease',
+                    'deaths_mean', 'admis_mean','allbed_mean']
+        #cols.append('date')
         df = pd.read_json(self.url + '/us/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
-        df = df[cols]
-        #df = df.melt(id_vars=['date'],value_vars=cols)
+        proj = self.get_projections().query("state=='US'")
+        df = df.merge(proj, on=['date'], how='outer')
+        df = df.melt(id_vars=['date'],value_vars=cols)
+        df['variable'] = df['variable'].map(self.graph_rename)
 
         return df
 

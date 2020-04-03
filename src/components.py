@@ -62,17 +62,14 @@ def build_checkboxes(data, id):
 
 
 def line_graph(data):
-    #fig = px.line(data, x='date',y='value', color='variable')
-    cols = [c for c in data.columns if c not in ('state','date')]
-    fig = go.Figure()
-    for c in cols:
-        fig.add_trace(go.Scatter(x=data['date'], y=data[c], mode='lines+markers', name=c))
-
+    fig = px.line(data, x='date',y='value', color='variable')
     fig.update_layout(title=None, xaxis_tickformat='%b-%d', yaxis_tickformat=',', 
     xaxis_title='Date', yaxis_title='', 
-    showlegend=False,
-    legend_title=None, legend_orientation='h', legend_itemclick=False,
-    autosize=True, margin_autoexpand=True, margin_l=10)
+    showlegend=True,
+    legend_title=None, legend_orientation='h', legend_itemclick='toggle',
+    legend_x=0.5, legend_xanchor='center', legend_borderwidth=1, legend_y=1.3,
+    autosize=True, margin_autoexpand=True, margin_t=0)
+
     return dbc.Col(dcc.Graph(figure=fig, config=config))
 
 def state_info(state, data):
@@ -84,7 +81,6 @@ def state_info(state, data):
     
 
     return [dbc.Col([
-                dbc.Row(build_checkboxes(data.graph_rename,"state-switches"),no_gutters=True),
                 dbc.Row(line_graph(data.get_state_graph_data(state)),id='state-graph', no_gutters=True)
                 ]),
                 dbc.Col(dbc.Card([
