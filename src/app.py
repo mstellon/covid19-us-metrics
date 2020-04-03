@@ -29,15 +29,16 @@ external_stylesheets = [{"src":"https://stackpath.bootstrapcdn.com/bootstrap/4.4
 server = flask.Flask(__name__)
 
 app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container([
-      dbc.Row(components.national_stats(data.get_national_stats(), data.national_last_update)),
+      dbc.Row([components.national_stats(data.get_national_stats(), data.national_last_update)]),
       dbc.Row([
           dbc.Col([
-              dcc.Graph(figure=components.line_graph(data.get_national_historic()),
-                        config=config)
-          
-          ], width=6),
+              dbc.Row(dbc.Col(html.H5("Data Elements"))),
+              dbc.Row(components.build_checkboxes(data.graph_rename,id="national-switches"), no_gutters=True),
+              dbc.Row(id="national-graph", no_gutters=True)
+          ],width=6),
           dbc.Col(components.state_map(data.current_by_state()),width=6)
           ]),
       dbc.Row([
@@ -71,9 +72,27 @@ def map_state_dropdown(input_value):
     if input_value:
         return components.state_info(input_value,data)
     else:
-        return ""
-    
+        return dbc.Col("")
 
+@app.callback(
+    Output(component_id='national-graph', component_property="children"),
+    [Input(component_id='national-switches',component_property="value")]
+)
+def data_element_change(value):
+    if len(value) == 0:
+        return dbc.Col("No data elements selected")
+    else:
+        return components.line_graph(data.get_national_historic(cols=value))
+@app.callback(
+    Output(component_id='state-graph', component_property="children"),
+    [Input(component_id='state-dropdown',component_property='value'),
+     Input(component_id='state-switches', component_property='value')]
+)
+def state_date_element_change(state,value):
+    if len(value) == 0:
+        return dbc.Col("No data elements selected")
+    else:
+        return components.line_graph(data.get_state_graph_data(state,cols=value))
   
 if __name__ == '__main__':
     app.run_server(debug=True, port=5000, host='0.0.0.0')

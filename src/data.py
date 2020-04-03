@@ -23,14 +23,15 @@ class Data(object):
                 'death': 'Deaths',
                 'totalTestResults':'Total Reported Tests'
                 }
+        self.graph_rename = {"positiveIncrease": "Positives per Day",
+                            "totalTestResultsIncrease": "Tests per Day",
+                            "deathIncrease": "Deaths per Day"}
 
         self.daily_state_df = self.setup_state_data()
 
     def setup_state_data(self):
         df = pd.read_json(self.url + '/states/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
-        df = df.melt(id_vars=['date','state'],value_vars=['positive','negative','death','positiveIncrease','deathIncrease','totalTestResultsIncrease'])
-
         return df
 
     @property
@@ -41,13 +42,18 @@ class Data(object):
     def state_dropdown(self):
         return [{"label":s,"value":s } for s in STATES]
 
-    def current_by_state(self, var='positive'):
-        df = self.daily_state_df.query(f"variable=='{var}'")
+    def current_by_state(self):
+        df = self.daily_state_df
         return df.sort_values(['state','date']).drop_duplicates('state',keep='last')
     
-    def state_net_new(self, state):
+    def get_state_graph_data(self, state, cols=None):
+        if not cols:
+            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease']
+        cols.append('date')
+        cols.append('state')
         df = self.daily_state_df.query(f"state=='{state}'")
-        return df
+
+        return df[cols]
 
     def get_national_stats(self):
         us = requests.get(self.url + '/us').json()[0]
@@ -58,10 +64,14 @@ class Data(object):
     
         return us_data
 
-    def get_national_historic(self):
+    def get_national_historic(self, cols=None):
+        if not cols:
+            cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease']
+        cols.append('date')
         df = pd.read_json(self.url + '/us/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
-        df = df.melt(id_vars=['date'],value_vars=['positive','negative','death','positiveIncrease','deathIncrease','totalTestResultsIncrease'])
+        df = df[cols]
+        #df = df.melt(id_vars=['date'],value_vars=cols)
 
         return df
 

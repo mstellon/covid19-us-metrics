@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import requests
 import plotly.express as px
+from plotly import graph_objects as go
 
 from plot_config import config
 
@@ -18,7 +19,7 @@ def state_map(data):
 
     fig = px.choropleth(data_frame=data, locations='state',locationmode='USA-states', 
                     scope='usa',
-                    color='value',
+                    color='positive',
                    color_continuous_scale='reds',
                    width=1000,
                    title='Total Confirmed Positives')
@@ -40,25 +41,52 @@ def grade_card(grade):
         color = 'warning'
     else:
         color = 'danger'
-    card = html.H5(["Reporting Grade ", dbc.Badge(grade,color=color)], style={"text-align":"right"})
+    card = html.H5([html.A("Reporting Grade",href="https://covidtracking.com/about-data#data-quality-grade", target="_blank"),
+                    " ",
+                    dbc.Badge(grade,color=color)], style={"text-align":"right"})
     return card
 
+def build_checkboxes(data, id):
+    """Expects dict with where value is the label
+    of the checkbox
+    """
+
+    ops = [{"label": v, "value":k} for k,v in data.items()]
+    return  dbc.Col(dbc.Checklist(
+            options= ops,
+            value=list(data.keys()),
+            id=id,
+            switch=True,
+            inline=True
+        ))
+
+
 def line_graph(data):
-    fig = px.line(data, x='date',y='value', color='variable')
+    #fig = px.line(data, x='date',y='value', color='variable')
+    cols = [c for c in data.columns if c not in ('state','date')]
+    fig = go.Figure()
+    for c in cols:
+        fig.add_trace(go.Scatter(x=data['date'], y=data[c], mode='lines+markers', name=c))
+
     fig.update_layout(title=None, xaxis_tickformat='%b-%d', yaxis_tickformat=',', 
-    xaxis_title='Date', yaxis_title='', legend_title=None, legend_orientation='h',
-    margin_autoexpand=True, margin_l=0, margin_r=0, margin_t=0)
-    return fig
+    xaxis_title='Date', yaxis_title='', 
+    showlegend=False,
+    legend_title=None, legend_orientation='h', legend_itemclick=False,
+    autosize=True, margin_autoexpand=True, margin_l=10)
+    return dbc.Col(dcc.Graph(figure=fig, config=config))
 
 def state_info(state, data):
     if not state:
-        return ""
+        return dbc.Col("")
 
     state_info, state_current = data.get_state_data(state)
     state_grade = data.get_state_grade(state)
-    fig = line_graph(data.state_net_new(state))
+    
 
-    return [dbc.Col(dcc.Graph(id='state_new', figure=fig,  config=config),lg=6),
+    return [dbc.Col([
+                dbc.Row(build_checkboxes(data.graph_rename,"state-switches"),no_gutters=True),
+                dbc.Row(line_graph(data.get_state_graph_data(state)),id='state-graph', no_gutters=True)
+                ]),
                 dbc.Col(dbc.Card([
                     dbc.CardHeader(dbc.Row([
                                     dbc.Col(html.H3(state_info['name'])), 
@@ -72,11 +100,11 @@ def state_info(state, data):
                             )
                         ),
                         dbc.Row([
-                            dbc.Col("place holders",lg=4),
+                            dbc.Col("place holders",width=4),
                             dbc.Col([
                                 dcc.Markdown(state_info.get('notes', ""))
                             ])
             
                         ])
                         ])
-            ]),lg=6)]
+            ]))]
