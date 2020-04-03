@@ -1,6 +1,7 @@
 from io import BytesIO
 from datetime import datetime
 import pytz
+import os
 
 import requests
 import requests_cache
@@ -8,6 +9,8 @@ import pandas as pd
 import numpy as np
 import us
 import zipfile
+
+root = os.path.dirname(__file__)
 
 requests_cache.install_cache(expire_after=900, backend='memory')
 STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", 
@@ -33,6 +36,8 @@ class Data(object):
                             'allbed_mean':"Projected Hospital Beds Needed per Day"}
 
         self.daily_state_df = self.setup_state_data()
+
+        self.pop_df = pd.read_csv(os.path.join(root,'data/census_pop.csv'))
 
     def setup_state_data(self):
         df = pd.read_json(self.url + '/states/daily')
@@ -70,7 +75,11 @@ class Data(object):
 
     def current_by_state(self):
         df = self.daily_state_df
-        return df.sort_values(['state','date']).drop_duplicates('state',keep='last')
+        df = df.sort_values(['state','date']).drop_duplicates('state',keep='last')
+        df = df.merge(self.pop_df,on='state',how='inner')
+        df['positivepercap'] = df['positive'] / (df['population'] / 10000)
+        return df
+
     
     def get_state_graph_data(self, state, cols=None):
         if not cols:

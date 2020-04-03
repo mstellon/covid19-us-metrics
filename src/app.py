@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+import os
+
 import dash
 import dash_core_components as dcc
 from dash.dependencies import Input, Output
@@ -15,6 +16,10 @@ import requests
 import components
 from data import Data
 from plot_config import config
+root = os.path.dirname(__file__)
+with open(os.path.join(root,'intro.md'),'r') as f:
+    intro = f.read()
+
 data = Data()
 
 external_stylesheets = [{"src":"https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css",
@@ -32,10 +37,22 @@ app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTST
 app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container([
+      dbc.Row([dbc.Col([
+          dbc.Row(
+              [dbc.Col(html.H1("Covid-19 Metrics")),
+              dbc.Col(html.A("Github",href="https://github.com/mstellon/covid19-us-metrics", target="_blank"), style={"text-align":"right"})
+              
+              ]
+              ,justify='between'),
+          
+          html.Hr(),
+          dcc.Markdown(intro)
+
+      ])]),
       dbc.Row([components.national_stats(data.get_national_stats(), data.national_last_update)]),
       dbc.Row([
           dbc.Col([
-              dbc.Row(dbc.Col(html.H5("Past and Projected Data"))),
+              dbc.Row(dbc.Col(html.H3("Past and Projected Data"))),
               dbc.Row(dbc.Col(html.P("Click legend to turn data elements on or off")), no_gutters=True),
               dbc.Row([components.line_graph(data.get_national_historic())], no_gutters=True)
           ]),
@@ -52,7 +69,9 @@ app.layout = dbc.Container([
           placeholder='Select a State'))
       ]
       ),
-      dbc.Row(id='state')
+      dbc.Row(id='state'),
+      dbc.Row(dbc.Col(html.Hr())),
+      
       ])
 
 @app.callback(

@@ -19,10 +19,10 @@ def state_map(data):
 
     fig = px.choropleth(data_frame=data, locations='state',locationmode='USA-states', 
                     scope='usa',
-                    color='positive',
+                    color='positivepercap',
                    color_continuous_scale='reds',
                    width=1000,
-                   title='Total Confirmed Positives')
+                   title='Total Confirmed Positives per 10,000')
     fig.update_layout(title_x=.5, margin_r=0, margin_l=0, margin_autoexpand=True, showlegend=False, coloraxis_showscale=False)
     return dcc.Graph(id='map',figure=fig, config=config)
 
@@ -96,8 +96,18 @@ def state_info(state, data):
                             )
                         ),
                         dbc.Row([
-                            dbc.Col("place holders",width=4),
+                            dbc.Col([html.H5("State Links"),
+                                    dbc.ListGroup([
+                                        dbc.ListGroupItem("Covid Site",href=state_info['covid19Site'], target="_blank"),
+                                        dbc.ListGroupItem("Secondary Covid Site", href=state_info['covid19SiteSecondary'], target="_blank"),
+                                        dbc.ListGroupItem("Twitter", href=f"https://twitter.com/{state_info['twitter']}", target="_blank")
+
+                                    ])
+                                    
+                            
+                            ],width=4),
                             dbc.Col([
+                                html.H5("Data notes"),
                                 dcc.Markdown(state_info.get('notes', ""))
                             ])
             
