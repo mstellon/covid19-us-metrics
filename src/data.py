@@ -34,7 +34,10 @@ class Data(object):
                             'deaths_mean':"Projected Deaths per Day",
                             'admis_mean':"Projected Hospital Admission per Day",
                             'allbed_mean':"Projected Hospital Beds Needed per Day"}
-
+        self.graph_tab_mapping = [
+            ["positiveIncrease"],
+            ["deathIncrease","deaths_mean"]
+        ]
         self.daily_state_df = self.setup_state_data()
 
         self.pop_df = pd.read_csv(os.path.join(root,'data/census_pop.csv'))

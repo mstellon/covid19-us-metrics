@@ -7,6 +7,7 @@ from plotly import graph_objects as go
 
 from plot_config import config
 
+
 def build_table(data, id=None, drop=None):
     """expects dict"""
     if drop:
@@ -27,7 +28,7 @@ def state_map(data):
     return dcc.Graph(id='map',figure=fig, config=config)
 
 def national_stats(data, update):
-    return dbc.Col([
+    return html.Div([
         html.H3("United States National Stats"),
         html.P(html.Small(f"Last update: {update}")),
         html.H4("Current Totals"),
@@ -62,15 +63,36 @@ def build_checkboxes(data, id):
 
 
 def line_graph(data):
-    fig = px.line(data, x='date',y='value', color='variable')
+    fig = px.line(data, x='date',y='value', color='variable', height=500)
     fig.update_layout(title=None, xaxis_tickformat='%b-%d', yaxis_tickformat=',', 
     xaxis_title='Date', yaxis_title='', 
     showlegend=True,
     legend_title=None, legend_orientation='h', legend_itemclick='toggle',
     legend_x=0.5, legend_xanchor='center', legend_borderwidth=1, legend_y=1.3,
-    autosize=True, margin_autoexpand=True, margin_t=0)
+    margin_autoexpand=True, margin_t=0, autosize=True
+    )
 
-    return dbc.Col(dcc.Graph(figure=fig, config=config))
+    return dcc.Graph(figure=fig, config=config)
+
+def graph_tabs(id):
+    tabs =dbc.Col([
+        dbc.Tabs(
+        [
+            dbc.Tab(label="Confirmed Positives per Day", tab_id=f"{id}-0"),
+            dbc.Tab(label="Deaths per Day", tab_id=f"{id}-1"),
+
+        ],id=f"{id}-tabs",
+         active_tab=f"tab{id}-0"
+        ),
+        html.Div(id=id)
+    ]
+    )
+    return tabs
+
+def national_graph(data):
+    """Expects data obj"""
+    content = [line_graph(data.get_national_historic(cols=c)) for c in data.graph_tab_mapping]
+    return graph_tabs('national-graph', content)
 
 def state_info(state, data):
     if not state:
@@ -79,9 +101,8 @@ def state_info(state, data):
     state_info, state_current = data.get_state_data(state)
     state_grade = data.get_state_grade(state)
     
-
     return [dbc.Col([
-                dbc.Row(line_graph(data.get_state_graph_data(state)),id='state-graph', no_gutters=True)
+                graph_tabs(id="state-graph") 
                 ]),
                 dbc.Col(dbc.Card([
                     dbc.CardHeader(dbc.Row([

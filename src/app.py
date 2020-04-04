@@ -7,7 +7,7 @@ import dash_html_components as html
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import flask
-
+from flask_caching import Cache
 
 import pandas as pd
 import plotly.express as px
@@ -34,6 +34,11 @@ external_stylesheets = [{"src":"https://stackpath.bootstrapcdn.com/bootstrap/4.4
 server = flask.Flask(__name__)
 
 app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'simple',
+})
+
 app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container([
@@ -49,12 +54,12 @@ app.layout = dbc.Container([
           dcc.Markdown(intro)
 
       ])]),
-      dbc.Row([components.national_stats(data.get_national_stats(), data.national_last_update)]),
+      dbc.Row(dbc.Col([components.national_stats(data.get_national_stats(), data.national_last_update)])),
       dbc.Row([
           dbc.Col([
-              dbc.Row(dbc.Col(html.H3("Past and Projected Data"))),
-              dbc.Row(dbc.Col(html.P("Click legend to turn data elements on or off")), no_gutters=True),
-              dbc.Row([components.line_graph(data.get_national_historic())], no_gutters=True)
+             html.H3("Past and Projected Data"),
+              html.P("Click legend to turn data elements on or off"),
+              html.Div(components.graph_tabs(id="national-graph"))
           ]),
           
           ]),
@@ -97,21 +102,33 @@ def map_state_dropdown(input_value):
 
 @app.callback(
     Output(component_id='national-graph', component_property="children"),
-    [Input(component_id='national-switches',component_property="value")]
+    [Input(component_id='national-graph-tabs',component_property="active_tab")]
 )
-def data_element_change(value):
-    if len(value) == 0:
-        return dbc.Col("No data elements selected")
-    else:
-        return components.line_graph(data.get_national_historic(cols=value))
+@cache.memoize(timeout=300) 
+def tab_change(at):
+    print(at)
+    idx = int(at[-1])
+    print(idx)
+    cols = data.graph_tab_mapping[idx]
+    print(cols)
+    return components.line_graph(data.get_national_historic(cols=cols))
 @app.callback(
     Output(component_id='state-graph', component_property="children"),
-    [Input(component_id='state-dropdown',component_property='value')]
+    [Input(component_id='state-graph-tabs',component_property="active_tab"),
+    Input(component_id='state-dropdown', component_property='value')]
 )
-def state_date_element_change(state):
-    if state == "Select a State":
-        return ""
-    return components.line_graph(data.get_state_graph_data(state))
+@cache.memoize(timeout=300) 
+def state_tab_change(at, state):
+    print(at)
+    if at:
+        idx = int(at[-1])
+    else:
+        idx = 0
+    print(idx)
+    cols = data.graph_tab_mapping[idx]
+    print(cols)
+    return components.line_graph(data.get_state_graph_data(state,cols=cols))
+
   
 if __name__ == '__main__':
     app.run_server(debug=True, port=5000, host='0.0.0.0')
