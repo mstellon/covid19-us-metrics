@@ -38,7 +38,7 @@ app.title = 'COVID-19 US Metrics'
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'simple',
 })
-
+CACHE_TTL = 1800
 app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container([
@@ -99,7 +99,7 @@ def map_click(input_value):
 Output(component_id='state',component_property='children'),
 [Input(component_id='state-dropdown', component_property='value')]
 )
-@cache.memoize(timeout=300) 
+@cache.memoize(timeout=CACHE_TTL) 
 def map_state_dropdown(input_value):
     if input_value:
         return components.state_info(input_value,data)
@@ -110,7 +110,7 @@ def map_state_dropdown(input_value):
     Output(component_id='national-graph', component_property="children"),
     [Input(component_id='national-graph-tabs',component_property="active_tab")]
 )
-@cache.memoize(timeout=300) 
+@cache.memoize(timeout=CACHE_TTL) 
 def tab_change(at):
     print(at)
     idx = int(at[-1])
@@ -123,7 +123,7 @@ def tab_change(at):
     [Input(component_id='state-graph-tabs',component_property="active_tab"),
     Input(component_id='state-dropdown', component_property='value')]
 )
-@cache.memoize(timeout=300) 
+@cache.memoize(timeout=CACHE_TTL) 
 def state_tab_change(at, state):
     print(at)
     if at:
