@@ -63,7 +63,12 @@ app.layout = dbc.Container([
           ]),
           
           ]),
-      dbc.Row(dbc.Col(components.state_map(data.current_by_state()))),
+      dbc.Row([
+          dbc.Col([html.H5("Top States"),
+          components.state_list_per_cap(data.top_by_cap(10))], width=4),
+          dbc.Col(components.state_map(data.current_by_state()), width=8)
+          
+          ]),
       dbc.Row(dbc.Col(html.Hr())),
       dbc.Row([
           dbc.Col([
@@ -94,6 +99,7 @@ def map_click(input_value):
 Output(component_id='state',component_property='children'),
 [Input(component_id='state-dropdown', component_property='value')]
 )
+@cache.memoize(timeout=300) 
 def map_state_dropdown(input_value):
     if input_value:
         return components.state_info(input_value,data)

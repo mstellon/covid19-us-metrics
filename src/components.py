@@ -68,8 +68,8 @@ def line_graph(data):
     xaxis_title='Date', yaxis_title='', 
     showlegend=True,
     legend_title=None, legend_orientation='h', legend_itemclick='toggle',
-    legend_x=0.5, legend_xanchor='center', legend_borderwidth=1, legend_y=1.3,
-    margin_autoexpand=True, margin_t=0, autosize=True
+    legend_x=0.5, legend_xanchor='center', legend_borderwidth=1, legend_y=1.15,
+    margin_autoexpand=True, margin_t=10, autosize=True
     )
 
     return dcc.Graph(figure=fig, config=config)
@@ -80,6 +80,7 @@ def graph_tabs(id):
         [
             dbc.Tab(label="Confirmed Positives per Day", tab_id=f"{id}-0"),
             dbc.Tab(label="Deaths per Day", tab_id=f"{id}-1"),
+            dbc.Tab(label="Other Projections", tab_id=f"{id}-2")
 
         ],id=f"{id}-tabs",
          active_tab=f"tab{id}-0"
@@ -89,10 +90,15 @@ def graph_tabs(id):
     )
     return tabs
 
-def national_graph(data):
-    """Expects data obj"""
-    content = [line_graph(data.get_national_historic(cols=c)) for c in data.graph_tab_mapping]
-    return graph_tabs('national-graph', content)
+
+def state_list_per_cap(data):
+    """Expects list of dicts"""
+    body = []
+    header = [html.Thead(html.Tr([html.Td(k) for k in data[0].keys()]))]
+    for d in data:
+        body.append(html.Tr([html.Td(v) for v in d.values()]))
+    
+    return dbc.Table(header + [html.Tbody(body)], bordered=True, responsive=True)
 
 def state_info(state, data):
     if not state:

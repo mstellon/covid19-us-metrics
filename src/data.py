@@ -33,10 +33,11 @@ class Data(object):
                             "deathIncrease": "Deaths per Day",
                             'deaths_mean':"Projected Deaths per Day",
                             'admis_mean':"Projected Hospital Admission per Day",
-                            'allbed_mean':"Projected Hospital Beds Needed per Day"}
+                            'allbed_mean':"Projected Total Hospital Beds Needed per Day"}
         self.graph_tab_mapping = [
             ["positiveIncrease"],
-            ["deathIncrease","deaths_mean"]
+            ["deathIncrease","deaths_mean"],
+            ["admis_mean","allbed_mean"]
         ]
         self.daily_state_df = self.setup_state_data()
 
@@ -76,6 +77,15 @@ class Data(object):
     def state_dropdown(self):
         return [{"label":s,"value":s } for s in STATES]
 
+
+    def top_by_cap(self, n=5):
+        df = self.current_by_state()
+        df.sort_values('positivepercap', ascending=False, inplace=True)
+        df = df[:n]
+        df['#'] = range(1,n + 1)
+        return df[['#','state','positivepercap']].round({"positivepercap":2})\
+                .rename(columns={"state":"State","positivepercap":"Positive per 10K People"})\
+                .to_dict(orient='records')
     def current_by_state(self):
         df = self.daily_state_df
         df = df.sort_values(['state','date']).drop_duplicates('state',keep='last')
