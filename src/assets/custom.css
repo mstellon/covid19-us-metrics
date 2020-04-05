@@ -5,3 +5,10 @@ body{
 td, td{
     padding: 1px;
 }
+
+@media (max-width: 1200px){
+    .container{
+        width: 100%;
+        max-width: none;
+    }
+}
