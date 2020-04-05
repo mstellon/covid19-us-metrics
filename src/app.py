@@ -34,7 +34,7 @@ external_stylesheets = [{"src":"https://stackpath.bootstrapcdn.com/bootstrap/4.4
 server = flask.Flask(__name__)
 
 app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
+app.title = 'COVID-19 US Metrics'
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'simple',
 })
