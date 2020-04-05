@@ -26,10 +26,12 @@ class Data(object):
         self.url = 'https://covidtracking.com/api'
         self.col_rename = {
                 'positive':'Confirmed Positive',
+                'positivepercap':"Positive Per 10K",
                 'negative':'Reported Negative',
                 'hospitalized': 'Reported Hospitalized',
                 'death': 'Deaths',
-                'totalTestResults':'Total Reported Tests'
+                'testspercap': "Tests per 10K"
+                #'totalTestResults':'Total Reported Tests'
                 }
         self.graph_rename = {"positiveIncrease": "Positives per Day",
                             "totalTestResultsIncrease": "Tests per Day",
@@ -42,10 +44,12 @@ class Data(object):
             ["deathIncrease","deaths_mean"],
             ["admis_mean","allbed_mean"]
         ]
+        self.pop_df = pd.read_csv(os.path.join(root,'data/census_pop.csv'))
+
         self.last_update_time = None
         self.daily_state_df = self.setup_state_data()
 
-        self.pop_df = pd.read_csv(os.path.join(root,'data/census_pop.csv'))
+        
 
     def setup_state_data(self):
         # only update if TTL is exceeded
@@ -57,6 +61,9 @@ class Data(object):
 
         df = pd.read_json(self.url + '/states/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
+        df = df.merge(self.pop_df,on='state',how='inner')
+        df['positivepercap'] = df['positive'] / (df['population'] / 10000)
+        df['testspercap'] = df['totalTestResults'] / (df['population'] / 10000)
         self.last_update_time = time.time()
         return df
     
@@ -95,8 +102,8 @@ class Data(object):
         df.sort_values('positivepercap', ascending=False, inplace=True)
         df = df[:n]
         df['#'] = range(1,n + 1)
-        return df[['#','state','positivepercap']].round({"positivepercap":2})\
-                .rename(columns={"state":"State","positivepercap":"Positive per 10K People"})\
+        return df[['#','state','positivepercap', 'testspercap']].round({"positivepercap":2, "testspercap":2})\
+                .rename(columns={"state":"State","positivepercap":"Positive per 10K People", "testspercap":"Tests per 10K People"})\
                 .to_dict(orient='records')
     def current_by_state(self):
         # refresh data - since this is cached it is not a big peformance issue
@@ -104,8 +111,7 @@ class Data(object):
 
         df = self.daily_state_df
         df = df.sort_values(['state','date']).drop_duplicates('state',keep='last')
-        df = df.merge(self.pop_df,on='state',how='inner')
-        df['positivepercap'] = df['positive'] / (df['population'] / 10000)
+        
         return df
 
     
@@ -122,6 +128,9 @@ class Data(object):
 
     def get_national_stats(self):
         us = requests.get(self.url + '/us').json()[0]
+        
+        us['positivepercap'] = round(us['positive'] / 33036.2592,2) #us 10k pop
+        us['testspercap'] = round(us['totalTestResults'] / 33036.2592,2)
 
         us_data = {}
         for k,v in self.col_rename.items():
@@ -157,5 +166,9 @@ class Data(object):
     def get_state_data(self, state):
         state_info = requests.get(self.url + '/states/info', params={"state":state}).json()
         state_current = requests.get(self.url + '/states', params={'state':state}).json()
+        state_pop = self.pop_df.query(f"state=='{state}'")['population'].values[0]
+
+        state_current['positivepercap'] = round(state_current['positive'] / (state_pop/10000),2) #us 10k pop
+        state_current['testspercap'] = round(state_current['totalTestResults'] / (state_pop/10000),2)
         state_current = {v: state_current[k] for k,v in self.col_rename.items()}
         return state_info, state_current
