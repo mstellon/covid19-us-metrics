@@ -2,6 +2,7 @@ from io import BytesIO
 from datetime import datetime
 import pytz
 import os
+import time
 
 import requests
 import requests_cache
@@ -18,6 +19,8 @@ STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
           "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
           "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
           "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+
+DATA_TTL = 1800
 class Data(object):
     def __init__(self):
         self.url = 'https://covidtracking.com/api'
@@ -39,13 +42,22 @@ class Data(object):
             ["deathIncrease","deaths_mean"],
             ["admis_mean","allbed_mean"]
         ]
+        self.last_update_time = None
         self.daily_state_df = self.setup_state_data()
 
         self.pop_df = pd.read_csv(os.path.join(root,'data/census_pop.csv'))
 
     def setup_state_data(self):
+        # only update if TTL is exceeded
+        if self.last_update_time:
+            if time.time() - self.last_update_time < DATA_TTL:
+                return self.daily_state_df
+
+
+
         df = pd.read_json(self.url + '/states/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
+        self.last_update_time = time.time()
         return df
     
     def get_projections(self):
@@ -87,6 +99,9 @@ class Data(object):
                 .rename(columns={"state":"State","positivepercap":"Positive per 10K People"})\
                 .to_dict(orient='records')
     def current_by_state(self):
+        # refresh data - since this is cached it is not a big peformance issue
+        self.daily_state_df = self.setup_state_data()
+
         df = self.daily_state_df
         df = df.sort_values(['state','date']).drop_duplicates('state',keep='last')
         df = df.merge(self.pop_df,on='state',how='inner')
