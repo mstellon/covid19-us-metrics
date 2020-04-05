@@ -54,7 +54,7 @@ class Data(object):
     def setup_state_data(self):
         # only update if TTL is exceeded
         if self.last_update_time:
-            if time.time() - self.last_update_time < DATA_TTL:
+            if time.time() - self.last_update_time > DATA_TTL:
                 return self.daily_state_df
 
 

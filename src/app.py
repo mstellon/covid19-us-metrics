@@ -112,11 +112,11 @@ def map_state_dropdown(input_value):
 )
 @cache.memoize(timeout=CACHE_TTL) 
 def tab_change(at):
-    print(at)
+
     idx = int(at[-1])
-    print(idx)
+
     cols = data.graph_tab_mapping[idx]
-    print(cols)
+
     return components.line_graph(data.get_national_historic(cols=cols))
 @app.callback(
     Output(component_id='state-graph', component_property="children"),
@@ -125,14 +125,11 @@ def tab_change(at):
 )
 @cache.memoize(timeout=CACHE_TTL) 
 def state_tab_change(at, state):
-    print(at)
     if at:
         idx = int(at[-1])
     else:
         idx = 0
-    print(idx)
     cols = data.graph_tab_mapping[idx]
-    print(cols)
     return components.line_graph(data.get_state_graph_data(state,cols=cols))
 
   
