@@ -77,7 +77,7 @@ class Data(object):
         csvf = [f for f in z.namelist() if ".csv" in f]
         csv = BytesIO(z.read(csvf[0]))
         df = pd.read_csv(csv)
-        df['state'] = df.location.map(self.get_state)
+        df['state'] = df['location_name'].map(self.get_state)
         df['date'] = pd.to_datetime(df['date'],format='%Y-%m-%d')
         # keep future projections
         df = df[df['date'] >= pd.to_datetime('today')]
@@ -146,7 +146,7 @@ class Data(object):
         #cols.append('date')
         df = pd.read_json(self.url + '/us/daily')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
-        proj = self.get_projections().query("state=='US'")
+        proj = self.get_projections().query("state=='United States of America'")
         df = df.merge(proj, on=['date'], how='outer')
         df = df.melt(id_vars=['date'],value_vars=cols)
         df['variable'] = df['variable'].map(self.graph_rename)
