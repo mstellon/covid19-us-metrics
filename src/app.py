@@ -42,7 +42,10 @@ cache = Cache(app.server, config={
 
 app.config.suppress_callback_exceptions = True
 
-app.layout = dbc.Container([
+
+@cache.memoize(timeout=300)
+def serve_layout():
+    return dbc.Container([
       dbc.Row([dbc.Col([
           dbc.Row(
               [dbc.Col(html.H1("Covid-19 Metrics")),
@@ -84,6 +87,8 @@ app.layout = dbc.Container([
       dbc.Row(dbc.Col(html.Hr())),
       
       ])
+
+app.layout = serve_layout
 
 @app.callback(
     Output(component_id='state-dropdown', component_property='value'),
