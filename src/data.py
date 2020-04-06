@@ -41,7 +41,7 @@ class Data(object):
                             'admis_mean':"Projected Hospital Admission per Day",
                             'allbed_mean':"Projected Total Hospital Beds Needed per Day"}
         self.graph_tab_mapping = [
-            ["positiveIncrease"],
+            ["positiveIncrease", "totalTestResultsIncrease"],
             ["deathIncrease","deaths_mean"],
             ["admis_mean","allbed_mean"]
         ]
