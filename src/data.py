@@ -4,6 +4,7 @@ import pytz
 import os
 import time
 
+import dateutil.parser
 import requests
 import requests_cache
 import pandas as pd
@@ -156,11 +157,16 @@ class Data(object):
     def national_last_update(self):
         resp = requests.get(self.url + '/us')
         last_mod = resp.json()[0]['lastModified']
+        return self.format_last_modified(last_mod)
+    def format_last_modified(self,last_mod):
         eastern = pytz.timezone('US/Eastern')
-        dt = datetime.strptime(last_mod, '%Y-%m-%dT%H:%M:%S.%f%z')
+        #dt = datetime.strptime(last_mod, '%Y-%m-%dT%H:%M:%S.%f%z')
+        dt = dateutil.parser.parse(last_mod)
         dt = dt.astimezone(eastern)
         return dt.strftime('%A, %B %d, %Y %I:%M%p %Z %zUTC')
-
+    def state_last_update(self,state):
+        last_mod = requests.get(self.url + '/states', params={'state':state}).json()['dateModified']
+        return self.format_last_modified(last_mod)
     def get_state_grade(self, state):
         data =  requests.get(self.url + '/states', params={'state':state}).json()
         return data['grade']

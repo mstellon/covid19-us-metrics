@@ -106,7 +106,8 @@ def state_info(state, data):
 
     state_info, state_current = data.get_state_data(state)
     state_grade = data.get_state_grade(state)
-    
+    last_update = data.state_last_update(state)
+
     return [dbc.Col([
                 graph_tabs(id="state-graph") 
                 ]),
@@ -119,6 +120,7 @@ def state_info(state, data):
                     dbc.CardBody([dbc.Row(
                         dbc.Col([
                             html.H5("Current Totals"),
+                            html.Small(f"Last updated - {last_update}"),
                             build_table(state_current, id='state-data')]
                             )
                         ),
