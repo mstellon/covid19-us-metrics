@@ -154,7 +154,8 @@ class Data(object):
 
     @property
     def national_last_update(self):
-        last_mod = requests.get(self.url + '/us').json()[0]['lastModified']
+        resp = requests.get(self.url + '/us')
+        last_mod = resp.json()[0]['lastModified']
         eastern = pytz.timezone('US/Eastern')
         dt = datetime.strptime(last_mod, '%Y-%m-%dT%H:%M:%S.%f%z')
         dt = dt.astimezone(eastern)
