@@ -80,7 +80,8 @@ def graph_tabs(id):
         [
             dbc.Tab(label="Confirmed Positives per Day", tab_id=f"{id}-0"),
             dbc.Tab(label="Deaths per Day", tab_id=f"{id}-1"),
-            dbc.Tab(label="Other Projections", tab_id=f"{id}-2")
+            dbc.Tab(label="Other Projections", tab_id=f"{id}-2"),
+            dbc.Tab(label="Hospitalized", tab_id=f"{id}-3")
 
         ],id=f"{id}-tabs",
          active_tab=f"tab{id}-0"
