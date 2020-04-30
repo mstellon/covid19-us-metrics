@@ -24,7 +24,7 @@ STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
 DATA_TTL = 1800
 class Data(object):
     def __init__(self):
-        self.url = 'https://covidtracking.com/api'
+        self.url = 'https://covidtracking.com/api/v1'
         self.col_rename = {
                 'positive':'Confirmed Positive',
                 'positivepercap':"Positive Per 10K",
@@ -60,7 +60,7 @@ class Data(object):
 
 
 
-        df = pd.read_json(self.url + '/states/daily')
+        df = pd.read_json(self.url + '/states/daily.json')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
         df = df.merge(self.pop_df,on='state',how='inner')
         df['positivepercap'] = df['positive'] / (df['population'] / 10000)
@@ -128,7 +128,7 @@ class Data(object):
         return df
 
     def get_national_stats(self):
-        us = requests.get(self.url + '/us').json()[0]
+        us = requests.get(self.url + '/us/current.json').json()[0]
         
         us['positivepercap'] = round(us['positive'] / 33036.2592,2) #us 10k pop
         us['testspercap'] = round(us['totalTestResults'] / 33036.2592,2)
@@ -144,7 +144,7 @@ class Data(object):
             cols = ['positiveIncrease','deathIncrease','totalTestResultsIncrease',
                     'deaths_mean', 'admis_mean','allbed_mean']
         #cols.append('date')
-        df = pd.read_json(self.url + '/us/daily')
+        df = pd.read_json(self.url + '/us/daily.json')
         df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
         proj = self.get_projections().query("state=='United States of America'")
         df = df.merge(proj, on=['date'], how='outer')
@@ -155,7 +155,7 @@ class Data(object):
 
     @property
     def national_last_update(self):
-        resp = requests.get(self.url + '/us')
+        resp = requests.get(self.url + '/us/current.json')
         last_mod = resp.json()[0]['lastModified']
         return self.format_last_modified(last_mod)
     def format_last_modified(self,last_mod):
@@ -165,14 +165,14 @@ class Data(object):
         dt = dt.astimezone(eastern)
         return dt.strftime('%A, %B %d, %Y %I:%M%p %Z %zUTC')
     def state_last_update(self,state):
-        last_mod = requests.get(self.url + '/states', params={'state':state}).json()['dateModified']
+        last_mod = requests.get(self.url + f'/states/{state}/current.json').json()['dateModified']
         return self.format_last_modified(last_mod)
     def get_state_grade(self, state):
-        data =  requests.get(self.url + '/states', params={'state':state}).json()
+        data =  requests.get(self.url + f'/states/{state}/current.json').json()
         return data['grade']
     def get_state_data(self, state):
-        state_info = requests.get(self.url + '/states/info', params={"state":state}).json()
-        state_current = requests.get(self.url + '/states', params={'state':state}).json()
+        state_info = requests.get(self.url + f"/states/{state}/info.json").json()
+        state_current = requests.get(self.url + f"/states/{state}/current.json").json()
         state_pop = self.pop_df.query(f"state=='{state}'")['population'].values[0]
 
         state_current['positivepercap'] = round(state_current['positive'] / (state_pop/10000),2) #us 10k pop
