@@ -167,14 +167,16 @@ class Data(object):
         dt = dt.astimezone(eastern)
         return dt.strftime('%A, %B %d, %Y %I:%M%p %Z %zUTC')
     def state_last_update(self,state):
+        state = state.lower()
         last_mod = requests.get(self.url + f'/states/{state}/current.json').json()['dateModified']
         return self.format_last_modified(last_mod)
     def get_state_grade(self, state):
+        state = state.lower()
         data =  requests.get(self.url + f'/states/{state}/current.json').json()
-        return data['grade']
+        return data['dataQualityGrade']
     def get_state_data(self, state):
-        state_info = requests.get(self.url + f"/states/{state}/info.json").json()
-        state_current = requests.get(self.url + f"/states/{state}/current.json").json()
+        state_info = requests.get(self.url + f"/states/{state.lower()}/info.json").json()
+        state_current = requests.get(self.url + f"/states/{state.lower()}/current.json").json()
         state_pop = self.pop_df.query(f"state=='{state}'")['population'].values[0]
 
         state_current['positivepercap'] = round(state_current['positive'] / (state_pop/10000),2) #us 10k pop

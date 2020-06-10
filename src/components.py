@@ -36,7 +36,7 @@ def national_stats(data, update):
     ])
 
 def grade_card(grade):
-    if grade == 'A':
+    if 'A' in grade:
         color = 'success'
     elif grade in ('B','C','D'):
         color = 'warning'
