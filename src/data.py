@@ -29,7 +29,7 @@ class Data(object):
                 'positive':'Confirmed Positive',
                 'positivepercap':"Positive Per 10K",
                 'negative':'Reported Negative',
-                'hospitalized': 'Reported Hospitalized',
+                'hospitalizedCurrently': 'Reported Hospitalized',
                 'death': 'Deaths',
                 'testspercap': "Tests per 10K"
                 #'totalTestResults':'Total Reported Tests'
