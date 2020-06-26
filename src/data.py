@@ -76,7 +76,7 @@ class Data(object):
         
         f = BytesIO(resp.content)
         z = zipfile.ZipFile(f)
-        csvf = [f for f in z.namelist() if ".csv" in f]
+        csvf = [f for f in z.namelist() if 'Reference_hospitalization_all_locs.csv' in f]
         csv = BytesIO(z.read(csvf[0]))
         df = pd.read_csv(csv)
         df['state'] = df['location_name'].map(self.get_state)
